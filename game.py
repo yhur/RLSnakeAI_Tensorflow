@@ -2,7 +2,6 @@ import numpy as np
 from SnakeGame.snake import Snake, Direction, Point
 
 class SnakeGameAI(Snake):
-
     def moveTo(self, action):
         reward = 0
         old_score = self.score
