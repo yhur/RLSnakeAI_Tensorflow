@@ -12,7 +12,7 @@ BATCH_SIZE = 1000
 LR = 0.001
 
 clock = pygame.time.Clock()
-SPEED = 10
+SPEED = 500
 
 class Agent:
 
