@@ -40,7 +40,7 @@ class QTrainer:
         # (n, x)
 
         if len(state.shape) == 1:
-            # (1, x)
+            # this is for the short memory. ie. each move
             state = torch.unsqueeze(state, 0)
             next_state = torch.unsqueeze(next_state, 0)
             action = torch.unsqueeze(action, 0)
@@ -66,6 +66,3 @@ class QTrainer:
         loss.backward()
 
         self.optimizer.step()
-
-
-
