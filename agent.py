@@ -98,4 +98,7 @@ def train():
 
 
 if __name__ == '__main__':
-    train()
+    try:
+        train()
+    except pygame.error as e:
+        print('App stopped')
