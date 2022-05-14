@@ -12,47 +12,34 @@ class SnakeGameAI(Snake):
             reward += 10
         return reward, game_over, score
 
+    def rightDirection(self, direction=None):
+        direction = direction if direction else self.direction
+        idx = self.directionRing.index(direction)
+        return self.directionRing[(idx + 1) % 4]
+
+    def leftDirection(self, direction=None):
+        direction = direction if direction else self.direction
+        idx = self.directionRing.index(direction)
+        return self.directionRing[(idx - 1) % 4]
+
     def getState(self):
-        point_l = Point(self.head.x - 1, self.head.y)
-        point_r = Point(self.head.x + 1, self.head.y)
-        point_u = Point(self.head.x, self.head.y - 1)
-        point_d = Point(self.head.x, self.head.y + 1)
-        
-        dir_l = self.direction == Direction.LEFT
-        dir_r = self.direction == Direction.RIGHT
-        dir_u = self.direction == Direction.UP
-        dir_d = self.direction == Direction.DOWN
+        forward = self.direction
+        right = self.rightDirection()
+        left  = self.leftDirection()
 
         state = [
             # Danger straight
-            (dir_r and self.is_coliding(point_r)) or 
-            (dir_l and self.is_coliding(point_l)) or 
-            (dir_u and self.is_coliding(point_u)) or 
-            (dir_d and self.is_coliding(point_d)),
-
-            # Danger right r -> d -> l -> u
-            (dir_r and self.is_coliding(point_d)) or
-            (dir_d and self.is_coliding(point_l)) or 
-            (dir_l and self.is_coliding(point_u)) or
-            (dir_u and self.is_coliding(point_r)),
-
+            self.is_coliding(Point(self.head.x + forward.value[0], self.head.y + forward.value[1])),
+            # Danger right
+            self.is_coliding(Point(self.head.x + right.value[0], self.head.y + right.value[1])),
             # Danger left
-            (dir_r and self.is_coliding(point_u)) or 
-            (dir_u and self.is_coliding(point_l)) or 
-            (dir_l and self.is_coliding(point_d)) or
-            (dir_d and self.is_coliding(point_r)),
-            
+            self.is_coliding(Point(self.head.x + left.value[0], self.head.y + left.value[1])),
             # Move direction
-            dir_l,
-            dir_r,
-            dir_u,
-            dir_d,
-            
+            *[self.direction == d for d in list(Direction)],
             # Food location 
             self.apple.x < self.head.x,  # food left
             self.apple.x > self.head.x,  # food right
             self.apple.y < self.head.y,  # food up
             self.apple.y > self.head.y   # food down
         ]
-
         return np.array(state, dtype=int)
