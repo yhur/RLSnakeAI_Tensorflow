@@ -30,6 +30,20 @@ class SnakeGameAI(Snake):
         else:
             return False
 
+    def bodyCheck(self, direction):
+        def bodyAhead(current, direction):
+            newPoint = Point(current.x + direction.value[0], current.y + direction.value[1])
+            #print(current, newPoint, direction)
+            if newPoint.x >= self.x or newPoint.x < 0 or newPoint.y >= self.y or newPoint.y < 0:
+                return False
+            else:
+                if newPoint in self.body[1:]:
+                    return True
+                else:
+                    return bodyAhead(newPoint, direction)
+        return bodyAhead(self.head, direction)
+        #return Point(self.head.x + direction.value[0], self.head.y + direction.value[1]) in self.body[1:]
+
     def getState(self):
         forward = self.direction
         right = self.rightDirection()
@@ -45,14 +59,13 @@ class SnakeGameAI(Snake):
             # Move direction
             *[self.direction == d for d in list(Direction)],
             # Danger straight - body
-            Point(self.head.x + forward.value[0], self.head.y + forward.value[1]) in self.body[1:],
-            Point(self.head.x + right.value[0], self.head.y + right.value[1]) in self.body[1:],
-            Point(self.head.x + left.value[0], self.head.y + left.value[1]) in self.body[1:],
+            self.bodyCheck(forward),
+            self.bodyCheck(right),
+            self.bodyCheck(left),
             # Food location 
             self.apple.x < self.head.x,  # food left
             self.apple.x > self.head.x,  # food right
             self.apple.y < self.head.y,  # food up
             self.apple.y > self.head.y   # food down
         ]
-        print(state)
         return np.array(state, dtype=int)
