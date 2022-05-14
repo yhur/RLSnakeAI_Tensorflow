@@ -5,13 +5,13 @@ from game import SnakeGameAI
 from model import Linear_QNet, QTrainer
 from helper import plot
 import pygame
+import click
 
 MAX_MEMORY = 100_000
 BATCH_SIZE = 1000
 LR = 0.001
 
 clock = pygame.time.Clock()
-SPEED = 500
 
 class Agent:
     def __init__(self):
@@ -21,6 +21,10 @@ class Agent:
         self.memory = deque(maxlen=MAX_MEMORY) # popleft()
         self.model = Linear_QNet(11, 256, 3)
         self.trainer = QTrainer(self.model, lr=LR, gamma=self.gamma)
+
+    def load(self, file_name='./model/model.pth'):
+        print('loading the stored weights')
+        self.model = torch.load(file_name)
 
     def remember(self, state, action, reward, next_state, done):
         self.memory.append((state, action, reward, next_state, done)) # popleft if MAX_MEMORY is reached
@@ -52,14 +56,20 @@ class Agent:
 
         return final_move
 
-
-def train():
-    plot_scores = []
-    plot_mean_scores = []
-    total_score = 0
+@click.command(context_settings=dict(help_option_names=["-h", "--help"]))
+@click.option("--weights", "-w", type=str, help="Weights File")
+@click.option("--speed", "-s", type=int, help="pygame speed")
+def train(**kwargs):
+    speed = 500
     record = 0
     agent = Agent()
     game = SnakeGameAI()
+    speed = kwargs['speed'] or speed
+    weights = kwargs['weights'] or None
+    if weights:
+        agent.load(weights)
+        agent.n_games = 100
+
     while True:
         # get old state
         state_old = game.getState()
@@ -69,7 +79,7 @@ def train():
 
         # perform move and get new state
         reward, done, score = game.moveTo(final_move)
-        clock.tick(SPEED)
+        clock.tick(speed)
         state_new = game.getState()
 
         # train short memory
@@ -89,13 +99,6 @@ def train():
                 agent.model.save()
 
             print('Game', agent.n_games, 'Score', score, 'Record:', record)
-
-            plot_scores.append(score)
-            total_score += score
-            mean_score = total_score / agent.n_games
-            plot_mean_scores.append(mean_score)
-            plot(plot_scores, plot_mean_scores)
-
 
 if __name__ == '__main__':
     try:
