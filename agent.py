@@ -60,6 +60,7 @@ class Agent:
 @click.option("--weights", "-w", type=str, help="Weights File")
 @click.option("--speed", "-s", type=int, help="pygame speed")
 def train(**kwargs):
+    global agent, record
     speed = 500
     record = 0
     agent = Agent()
@@ -68,7 +69,8 @@ def train(**kwargs):
     weights = kwargs['weights'] or None
     if weights:
         agent.load(weights)
-        agent.n_games = 100
+        record = agent.model.record if hasattr(agent.model, 'record') else 0
+        agent.n_games = agent.model.n_games if hasattr(agent.model, 'n_games') else 0
 
     while True:
         # get old state
@@ -96,6 +98,8 @@ def train(**kwargs):
 
             if score > record:
                 record = score
+                agent.model.n_games = agent.n_games
+                agent.model.record = record
                 agent.model.save()
 
             print('Game', agent.n_games, 'Score', score, 'Record:', record)
@@ -104,4 +108,7 @@ if __name__ == '__main__':
     try:
         train()
     except pygame.error as e:
+        agent.model.n_games = agent.n_games
+        agent.model.record = record
+        agent.model.save()
         print('App stopped')
