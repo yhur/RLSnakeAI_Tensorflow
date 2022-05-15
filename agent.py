@@ -56,17 +56,23 @@ class Agent:
 
         return final_move
 
+
 @click.command(context_settings=dict(help_option_names=["-h", "--help"]))
 @click.option("--weights", "-w", type=str, help="Weights File")
 @click.option("--speed", "-s", type=int, help="pygame speed")
+@click.option('--bsize', '-b', type=(int, int), help='board size')
 def train(**kwargs):
+    """\n\t\t\tWecome to SnakegameAI\n
+    * Click on the close control of the App, or hit Escpe to end the App\n
+    """
     global agent, record
     speed = 500
     record = 0
     agent = Agent()
-    game = SnakeGameAI()
     speed = kwargs['speed'] or speed
+    bsize = kwargs['bsize'] or (32, 24)
     weights = kwargs['weights'] or None
+    game = SnakeGameAI(x=bsize[0], y=bsize[1])
     if weights:
         agent.load(weights)
         record = agent.model.record if hasattr(agent.model, 'record') else 0

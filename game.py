@@ -41,8 +41,8 @@ class SnakeGameAI(Snake):
                     return True
                 else:
                     return bodyAhead(newPoint, direction)
-        return bodyAhead(self.head, direction)
-        #return Point(self.head.x + direction.value[0], self.head.y + direction.value[1]) in self.body[1:]
+        #return bodyAhead(self.head, direction)
+        return Point(self.head.x + direction.value[0], self.head.y + direction.value[1]) in self.body[1:]
 
     def getState(self):
         forward = self.direction

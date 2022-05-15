@@ -1,3 +1,4 @@
 .venv
 __pycache__
 model/model.pth
+m/model.pth
