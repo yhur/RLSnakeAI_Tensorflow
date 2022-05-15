@@ -23,6 +23,18 @@ class Linear_QNet(nn.Module):
         file_name = os.path.join(model_folder_path, file_name)
         torch.save(self, file_name)
 
+    def load(self, file_name='./model/model.pth'):
+        print('loading the stored model')
+        return torch.load(file_name)
+
+    def get_action(self, state):
+        final_move = [0,0,0]
+        state0 = torch.tensor(state, dtype=torch.float)
+        prediction = self(state0)
+        move = torch.argmax(prediction).item()
+        final_move[move] = 1
+        return final_move
+
 class QTrainer:
     def __init__(self, model, lr, gamma):
         self.lr = lr

@@ -1,17 +1,15 @@
-import torch
+from telnetlib import GA
 import random
 from collections import deque
-from game import SnakeGameAI
+from snakeai import SnakeGameAI
+from SnakeGame.boards import GameBoard, DummyBoard
 from model import Linear_QNet, QTrainer
-from helper import plot
 import pygame
 import click
 
 MAX_MEMORY = 100_000
 BATCH_SIZE = 1000
 LR = 0.001
-
-clock = pygame.time.Clock()
 
 class Agent:
     def __init__(self):
@@ -23,8 +21,7 @@ class Agent:
         self.trainer = QTrainer(self.model, lr=LR, gamma=self.gamma)
 
     def load(self, file_name='./model/model.pth'):
-        print('loading the stored weights')
-        self.model = torch.load(file_name)
+        self.model = self.model.load(file_name)
 
     def remember(self, state, action, reward, next_state, done):
         self.memory.append((state, action, reward, next_state, done)) # popleft if MAX_MEMORY is reached
@@ -49,18 +46,17 @@ class Agent:
             move = random.randint(0, 2)
             final_move[move] = 1
         else:
-            state0 = torch.tensor(state, dtype=torch.float)
-            prediction = self.model(state0)
-            move = torch.argmax(prediction).item()
-            final_move[move] = 1
+            final_move = self.model.get_action(state)
 
         return final_move
 
 
 @click.command(context_settings=dict(help_option_names=["-h", "--help"]))
-@click.option("--weights", "-w", type=str, help="Weights File")
+@click.option("--model", "-m", type=str, help="Stored model File")
 @click.option("--speed", "-s", type=int, help="pygame speed")
-@click.option('--bsize', '-b', type=(int, int), help='board size')
+@click.option('--width', '-w', type=int, help='board width')
+@click.option('--height', '-h', type=int, help='board height')
+@click.argument("cmd", default='hide', nargs=1)
 def train(**kwargs):
     """\n\t\t\tWecome to SnakegameAI\n
     * Click on the close control of the App, or hit Escpe to end the App\n
@@ -70,11 +66,17 @@ def train(**kwargs):
     record = 0
     agent = Agent()
     speed = kwargs['speed'] or speed
-    bsize = kwargs['bsize'] or (32, 24)
-    weights = kwargs['weights'] or None
-    game = SnakeGameAI(x=bsize[0], y=bsize[1])
-    if weights:
-        agent.load(weights)
+    width = kwargs['width'] or 32
+    height = kwargs['height'] or 24
+    model_file = kwargs['model'] or None
+    if kwargs['cmd'] == 'show':
+        board = GameBoard(x=width, y=height)
+        game = SnakeGameAI(board, speed)
+    else:
+        board = DummyBoard(x=width, y=height)
+        game = SnakeGameAI(board)
+    if model_file:
+        agent.load(model_file)
         record = agent.model.record if hasattr(agent.model, 'record') else 0
         agent.n_games = agent.model.n_games if hasattr(agent.model, 'n_games') else 0
 
@@ -86,8 +88,8 @@ def train(**kwargs):
         final_move = agent.get_action(state_old)
 
         # perform move and get new state
-        reward, done, score = game.moveTo(final_move)
-        clock.tick(speed)
+        alive, score, reward = game.moveTo(final_move)
+        done = False if alive else True
         state_new = game.getState()
 
         # train short memory
