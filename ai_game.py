@@ -75,6 +75,7 @@ def train(**kwargs):
     else:
         board = DummyBoard(x=width, y=height)
         game = SnakeGameAI(board)
+
     if model_file:
         agent.load(model_file)
         record = agent.model.record if hasattr(agent.model, 'record') else 0
