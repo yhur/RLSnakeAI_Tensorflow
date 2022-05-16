@@ -90,16 +90,15 @@ def train(**kwargs):
 
         # perform move and get new state
         alive, score, reward = game.moveTo(final_move)
-        done = False if alive else True
         state_new = game.getState()
 
         # train short memory
-        agent.train_short_memory(state_old, final_move, reward, state_new, done)
+        agent.train_short_memory(state_old, final_move, reward, state_new, alive)
 
         # remember
-        agent.remember(state_old, final_move, reward, state_new, done)
+        agent.remember(state_old, final_move, reward, state_new, alive)
 
-        if done:
+        if alive == False:
             # train long memory, plot result
             game.reset()
             agent.n_games += 1
