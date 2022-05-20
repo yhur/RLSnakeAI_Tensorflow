@@ -36,7 +36,7 @@ class SnakeGameAI(Snake):
         idx = self.directionRing.index(direction)
         return self.directionRing[(idx - 1) % 4]
 
-    def hitWall(self, direction):
+    def isWallAhead(self, direction):
         x = self.head.x + direction.value[0]
         y = self.head.y + direction.value[1]
         if x >= self.x or x < 0 or y >= self.y or y <0:
@@ -65,12 +65,12 @@ class SnakeGameAI(Snake):
 
         state = [
             # Danger straight - Wall
-            self.hitWall(forward),
+            self.isWallAhead(forward),
             # Danger right - Wall
-            self.hitWall(right),
+            self.isWallAhead(right),
             # Danger left - Wall
-            self.hitWall(left),
-            # Move direction
+            self.isWallAhead(left),
+            # current moving direction as one hot encoding [R, D, L, U]
             *[self.direction == d for d in list(Direction)],
             # Danger straight - body
             self.bodyCheck(forward),
