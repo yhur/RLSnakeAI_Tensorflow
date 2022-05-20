@@ -1,0 +1,38 @@
+
+
+AREA 51
+
+
+
+Action -> Reward
+Environment and Agent
+
+
+
+Environment
+    Game
+        Snake
+        Board
+
+Agent
+    ML Model
+    Policy
+    Memory
+
+
+Agent : Action to Reward
+Env : Reward to Agent 
+Agent : train model with (state, action, reward, n_state, alive)
+
+
+Environment
+    getState() -> state
+    doAction() -> Reward
+
+Agent
+    compile
+    fit 
+    getAction() -> action
+    test
+    save_weights
+    load_weights
