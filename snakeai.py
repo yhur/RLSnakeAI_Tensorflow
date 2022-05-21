@@ -77,9 +77,9 @@ class SnakeGameAI(Snake):
             self.bodyCheck(right),
             self.bodyCheck(left),
             # Food location 
-            self.apple.x < self.head.x,  # food left
-            self.apple.x > self.head.x,  # food right
-            self.apple.y < self.head.y,  # food up
-            self.apple.y > self.head.y   # food down
+            self.board.apple.x < self.head.x,  # food left
+            self.board.apple.x > self.head.x,  # food right
+            self.board.apple.y < self.head.y,  # food up
+            self.board.apple.y > self.head.y   # food down
         ]
         return np.array(state, dtype=int)
