@@ -58,8 +58,9 @@ class Agent:
         states, actions, rewards, next_states, dones = zip(*mini_sample)
         self.train_step(states, actions, rewards, next_states, dones)
 
-    def trainShortMemory(self, state, action, reward, next_state, done):
-        self.train_step(state, action, reward, next_state, done)
+    def trainShortMemory(self, state, action, reward, next_state, alive):
+        state, action, reward, next_state, alive = [state], [action], [reward], [next_state], [alive]
+        self.train_step(state, action, reward, next_state, alive)
 
     def getAction(self, state):
         # random moves: tradeoff exploration / exploitation
@@ -83,16 +84,6 @@ class Agent:
         action = torch.tensor(action, dtype=torch.long)
         next_state = torch.tensor(next_state, dtype=torch.float)
         reward = torch.tensor(reward, dtype=torch.float)
-        # (n, x)
-
-        if len(state.shape) == 1:
-            # this is for the short memory. ie. each move
-            state = torch.unsqueeze(state, 0)
-            next_state = torch.unsqueeze(next_state, 0)
-            action = torch.unsqueeze(action, 0)
-            reward = torch.unsqueeze(reward, 0)
-            alive = (alive, )
-
         # 1: predicted Q values with current state
         pred = self.model(state)
 
