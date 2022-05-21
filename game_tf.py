@@ -1,5 +1,5 @@
 from snakeai import SnakeGameAI
-from SnakeGame.boards import GameBoard, DummyBoard
+from SnakeGame.boards import GameBoard, Board
 from agent_tf import Agent
 import pygame
 import click
@@ -26,7 +26,7 @@ def train(**kwargs):
         board = GameBoard(x=width, y=height)
         game = SnakeGameAI(board, speed)
     else:
-        board = DummyBoard(x=width, y=height)
+        board = Board(x=width, y=height)
         game = SnakeGameAI(board)
 
     if model_file:
