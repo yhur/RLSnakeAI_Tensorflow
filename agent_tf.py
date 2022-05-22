@@ -23,13 +23,18 @@ class Agent:
             Dense(256, input_shape=(input_size, ), activation='relu'),
             Dense(output_size, activation='linear')
         ])
-        self.model.compile(Adam(learning_rate=lr), metrics=['mae'])
+        self.model.compile(Adam(learning_rate=lr), loss='mse', metrics=['mae'])
 
-    def load(self, file_name='./model/model.pth'):
-        pass
+    def save(self, file_name='model.h5'):
+        model_folder_path = './model'
+        if not os.path.exists(model_folder_path):
+            os.makedirs(model_folder_path)
+        file_name = os.path.join(model_folder_path, file_name)
+        self.model.save_weights(file_name)
 
-    def load(self, file_name='./model/model.pth'):
-        pass
+    def load(self, file_name='./model/model.h5'):
+        print('loading the stored model')
+        self.model.load_weights(file_name)
 
     def remember(self, state, action, reward, next_state, alive):
         self.memory.append((state, action, reward, next_state, alive)) # popleft if MAX_MEMORY is reached
@@ -41,7 +46,6 @@ class Agent:
             mini_sample = self.memory
 
         states, actions, rewards, next_states, alives = zip(*mini_sample)
-        print("hhhhhh")
         self.train_step(states, actions, rewards, next_states, alives)
 
     def trainShortMemory(self, state, action, reward, next_state, alive):
@@ -52,14 +56,12 @@ class Agent:
         # random moves: tradeoff exploration / exploitation
         self.epsilon = 80 - self.n_games
         final_move = [0,0,0]
-        print('get 1')
         if random.randint(0, 200) < self.epsilon:
             move = random.randint(0, 2)
             final_move[move] = 1
         else:
-            print('get 2')
             final_move = [0,0,0]
-            prediction = self.model.predict(np.array([state]))
+            prediction = self.model.predict(np.array([state]), verbose=False)
             move = np.argmax(prediction)
             final_move[move] = 1
             return final_move
@@ -68,17 +70,13 @@ class Agent:
 
     def train_step(self, state, action, reward, next_state, alive):
         # 1: predicted Q values with current state
-        pred = self.model.predict(np.array(state))
-
-        print('pred len', len(pred))
-        print('pred type', type(pred))
+        pred = self.model.predict(np.array(state), verbose=False)
 
         target = pred.copy()
         for idx in range(len(alive)):
             Q_new = reward[idx]
             if alive[idx]:
-                print('in q', next_state[idx])
-                Q_new = reward[idx] + self.gamma * np.amax(self.model.predict(np.array([next_state[idx]])))
+                Q_new = reward[idx] + self.gamma * np.amax(self.model.predict(np.array([next_state[idx]]), verbose=False))
 
             target[idx][np.argmax(action[idx]).item()] = Q_new
     
@@ -86,4 +84,4 @@ class Agent:
         # pred.clone()
         # preds[argmax(action)] = Q_new
         #self.model.fit(target, pred)
-        self.model.fit(np.array(state), np.array(target))
+        self.model.fit(np.array(state), np.array(target), verbose=False)
