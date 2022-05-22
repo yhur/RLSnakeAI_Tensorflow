@@ -1,22 +1,11 @@
-import pygame
 import numpy as np
 from SnakeGame.snake import Snake, Direction, Point
 
-clock = pygame.time.Clock()
-
 class SnakeGameAI(Snake):
-    def __init__(self, board, speed=500):
+    def __init__(self, board):
         super().__init__(board)
-        self.speed = speed
 
     def moveTo(self, action):
-        clock.tick(self.speed)
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                pygame.quit()
-            if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_ESCAPE:
-                    pygame.quit()
         reward = 0
         old_score = self.score
         gameOn = super().moveTo(action)
