@@ -46,8 +46,8 @@ class Agent:
     def load(self, file_name='./model/model.pth'):
         self.model = self.model.load(file_name)
 
-    def remember(self, state, action, reward, next_state, done):
-        self.memory.append((state, action, reward, next_state, done)) # popleft if MAX_MEMORY is reached
+    def remember(self, state, action, reward, next_state, alive):
+        self.memory.append((state, action, reward, next_state, alive)) # popleft if MAX_MEMORY is reached
 
     def trainLongMemory(self):
         if len(self.memory) > BATCH_SIZE:
@@ -55,8 +55,8 @@ class Agent:
         else:
             mini_sample = self.memory
 
-        states, actions, rewards, next_states, dones = zip(*mini_sample)
-        self.train_step(states, actions, rewards, next_states, dones)
+        states, actions, rewards, next_states, alives = zip(*mini_sample)
+        self.train_step(states, actions, rewards, next_states, alives)
 
     def trainShortMemory(self, state, action, reward, next_state, alive):
         state, action, reward, next_state, alive = [state], [action], [reward], [next_state], [alive]
