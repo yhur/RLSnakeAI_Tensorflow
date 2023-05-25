@@ -23,7 +23,9 @@ class Agent:
             Dense(256, input_shape=(input_size, ), activation='relu'),
             Dense(output_size, activation='linear')
         ])
-        self.model.compile(Adam(learning_rate=lr), loss='mse', metrics=['mae'])
+        self.optimizer = tf.keras.optimizers.Adam(learning_rate=lr)
+        self.loss = tf.keras.losses.MeanSquaredError()
+        #self.model.compile(Adam(learning_rate=lr), loss='mse')
 
     def save(self, file_name='model.h5'):
         model_folder_path = './model'
@@ -61,7 +63,7 @@ class Agent:
             final_move[move] = 1
         else:
             final_move = [0,0,0]
-            prediction = self.model.predict(np.array([state]), verbose=False)
+            prediction = self.model(np.array([state]))
             move = np.argmax(prediction)
             final_move[move] = 1
             return final_move
@@ -70,18 +72,23 @@ class Agent:
 
     def train_step(self, state, action, reward, next_state, alive):
         # 1: predicted Q values with current state
-        pred = self.model.predict(np.array(state), verbose=False)
+        target = np.array(self.model(np.array(state)))
 
-        target = pred.copy()
+        #print('b : ', target)          # target Q with only Immediate Reward
         for idx in range(len(alive)):
+            # 2: Q_new = r + y * max(next_predicted Q value) -> only do this if not done
+            # preds[argmax(action)] = Q_new
             Q_new = reward[idx]
             if alive[idx]:
-                Q_new = reward[idx] + self.gamma * np.amax(self.model.predict(np.array([next_state[idx]]), verbose=False))
+                Q_new = reward[idx] + self.gamma * np.amax(self.model(np.array([next_state[idx]])))
 
             target[idx][np.argmax(action[idx]).item()] = Q_new
+        #print('q : ', target)          # target Q with the delayed Reward
     
-        # 2: Q_new = r + y * max(next_predicted Q value) -> only do this if not done
-        # pred.clone()
-        # preds[argmax(action)] = Q_new
-        #self.model.fit(target, pred)
-        self.model.fit(np.array(state), np.array(target), verbose=False)
+        with tf.GradientTape() as tape:
+            pred = self.model(np.array(state))
+            main_loss = tf.reduce_mean(self.loss(target, pred))
+            loss = tf.add_n([main_loss] + self.model.losses)
+        gradients = tape.gradient(loss, self.model.trainable_variables)
+        self.optimizer.apply_gradients(zip(gradients, self.model.trainable_variables))
+        #self.model.fit(np.array(state), np.array(target), verbose=False)
