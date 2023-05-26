@@ -6,6 +6,7 @@ import tensorflow as tf
 import numpy as np
 import random
 import os
+import json
 
 MAX_MEMORY = 100_000
 BATCH_SIZE = 1000
@@ -32,11 +33,22 @@ class Agent:
         if not os.path.exists(model_folder_path):
             os.makedirs(model_folder_path)
         file_name = os.path.join(model_folder_path, file_name)
+        info_file = file_name.split('.h5')[0] + '.json'
+        info_json = {'record': self.model.record, 'n_games': self.model.n_games}
+        with open(info_file, 'w') as f:
+            f.write(json.dumps(info_json))
         self.model.save_weights(file_name)
 
     def load(self, file_name='./model/model.h5'):
         print('loading the stored model')
         self.model.load_weights(file_name)
+        info_file = file_name.split('.h5')[0] + '.json'
+        with open(info_file, 'r') as f:
+            info_json = json.load(f)
+            if 'record' in info_json:
+                self.model.record = info_json['record']
+            if 'n_games' in info_json:
+                self.model.n_games = info_json['n_games']
 
     def remember(self, state, action, reward, next_state, alive):
         self.memory.append((state, action, reward, next_state, alive)) # popleft if MAX_MEMORY is reached
