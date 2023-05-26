@@ -1,5 +1,4 @@
 pygame
-torch
 numpy
 tensorflow
 click
