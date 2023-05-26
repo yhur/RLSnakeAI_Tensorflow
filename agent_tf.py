@@ -86,7 +86,8 @@ class Agent:
         # 1: predicted Q values with current state
         target = np.array(self.model(np.array(state)))
 
-        #print('b : ', target)          # target Q with only Immediate Reward
+        print('Q Learning')
+        print('\tbefore : ', target)          # target Q with only Immediate Reward
         for idx in range(len(alive)):
             # 2: Q_new = r + y * max(next_predicted Q value) -> only do this if not done
             # preds[argmax(action)] = Q_new
@@ -95,7 +96,7 @@ class Agent:
                 Q_new = reward[idx] + self.gamma * np.amax(self.model(np.array([next_state[idx]])))
 
             target[idx][np.argmax(action[idx]).item()] = Q_new
-        #print('q : ', target)          # target Q with the delayed Reward
+        print('\tafter : ', target)          # target Q with the delayed Reward
     
         with tf.GradientTape() as tape:
             pred = self.model(np.array(state))
