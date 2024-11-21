@@ -11,11 +11,11 @@ def handler(signum, frame):
     sys.exit()
 signal.signal(signal.SIGINT, handler)
 
-@click.command(context_settings=dict(help_option_names=["-h", "--help"]))
+@click.command(context_settings=dict(help_option_names=["-h", "--help"]), help="\n python game_tf.py -m model/model.weights.h5 -s 500 -w 32 -h 24 show\n")
 @click.option("--model", "-m", type=str, help="Stored model File")
 @click.option("--speed", "-s", type=int, help="pygame speed")
 @click.option('--width', '-w', type=int, help='board width')
-@click.option('--height', '-h', type=int, help='board height')
+@click.option('--board_height', '-b', type=int, help='board height')
 @click.argument("cmd", default='hide', nargs=1)
 def train(**kwargs):
     """\n\t\t\tWecome to SnakegameAI\n
@@ -27,7 +27,7 @@ def train(**kwargs):
     agent = Agent()
     speed = kwargs['speed'] or speed
     width = kwargs['width'] or 32
-    height = kwargs['height'] or 24
+    height = kwargs['board_height'] or 24
     model_file = kwargs['model'] or None
     if kwargs['cmd'] == 'show':
         board = GameBoard(x=width, y=height, speed=speed)

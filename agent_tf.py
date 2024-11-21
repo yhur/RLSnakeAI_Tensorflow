@@ -28,7 +28,7 @@ class Agent:
         self.loss = tf.keras.losses.MeanSquaredError()
         #self.model.compile(Adam(learning_rate=lr), loss='mse')
 
-    def save(self, file_name='model.h5'):
+    def save(self, file_name='model.weights.h5'):
         model_folder_path = './model'
         if not os.path.exists(model_folder_path):
             os.makedirs(model_folder_path)
@@ -39,7 +39,7 @@ class Agent:
             f.write(json.dumps(info_json))
         self.model.save_weights(file_name)
 
-    def load(self, file_name='./model/model.h5'):
+    def load(self, file_name='./model/model.weights.h5'):
         print('loading the stored model')
         self.model.load_weights(file_name)
         info_file = file_name.split('.h5')[0] + '.json'
