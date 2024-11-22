@@ -1,6 +1,6 @@
 from collections import deque
 from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Dense, Flatten
+from tensorflow.keras.layers import Dense, Input
 from tensorflow.keras.optimizers import Adam
 import tensorflow as tf
 import numpy as np
@@ -21,11 +21,13 @@ class Agent:
         self.epsilon = 0 # randomness
         self.memory = deque(maxlen=MAX_MEMORY) # popleft()
         self.model = Sequential([
-            Dense(256, input_shape=(input_size, ), activation='relu'),
+            Input(shape=(input_size, )),
+            Dense(256, activation='relu'),
             Dense(output_size, activation='linear')
         ])
         self.optimizer = tf.keras.optimizers.Adam(learning_rate=lr)
         self.loss = tf.keras.losses.MeanSquaredError()
+        self.verbose = False
         #self.model.compile(Adam(learning_rate=lr), loss='mse')
 
     def save(self, file_name='model.weights.h5'):
@@ -35,6 +37,7 @@ class Agent:
         file_name = os.path.join(model_folder_path, file_name)
         info_file = file_name.split('.h5')[0] + '.json'
         info_json = {'record': self.model.record, 'n_games': self.model.n_games}
+        print(f'saving the model for {self.n_games} games with record {self.model.record}')
         with open(info_file, 'w') as f:
             f.write(json.dumps(info_json))
         self.model.save_weights(file_name)
@@ -86,8 +89,8 @@ class Agent:
         # 1: predicted Q values with current state
         target = np.array(self.model(np.array(state)))
 
-        print('Q Learning')
-        print('\tbefore : ', target)          # target Q with only Immediate Reward
+        self.verbose and print('Q Learning')
+        self.verbose and print('\tbefore : ', target)          # target Q with only Immediate Reward
         for idx in range(len(alive)):
             # 2: Q_new = r + y * max(next_predicted Q value) -> only do this if not done
             # preds[argmax(action)] = Q_new
@@ -96,7 +99,7 @@ class Agent:
                 Q_new = reward[idx] + self.gamma * np.amax(self.model(np.array([next_state[idx]])))
 
             target[idx][np.argmax(action[idx]).item()] = Q_new
-        print('\tafter : ', target)          # target Q with the delayed Reward
+        self.verbose and print('\tafter : ', target)          # target Q with the delayed Reward
     
         with tf.GradientTape() as tape:
             pred = self.model(np.array(state))

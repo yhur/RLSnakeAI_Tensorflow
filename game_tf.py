@@ -11,11 +11,12 @@ def handler(signum, frame):
     sys.exit()
 signal.signal(signal.SIGINT, handler)
 
-@click.command(context_settings=dict(help_option_names=["-h", "--help"]), help="\n python game_tf.py -m model/model.weights.h5 -s 500 -w 32 -h 24 show\n")
+@click.command(context_settings=dict(help_option_names=["-h", "--help"]), help="\nEx)python game_tf.py -m model/model.weights.h5 -s 500 -w 32 -h 24 show\n")
 @click.option("--model", "-m", type=str, help="Stored model File")
 @click.option("--speed", "-s", type=int, help="pygame speed")
 @click.option('--width', '-w', type=int, help='board width')
 @click.option('--board_height', '-b', type=int, help='board height')
+@click.option('--verbose', '-v', is_flag=True, help="Enable verbose mode.")
 @click.argument("cmd", default='hide', nargs=1)
 def train(**kwargs):
     """\n\t\t\tWecome to SnakegameAI\n
@@ -24,11 +25,13 @@ def train(**kwargs):
     #global agent, record
     speed = 500
     record = 0
-    agent = Agent()
     speed = kwargs['speed'] or speed
     width = kwargs['width'] or 32
     height = kwargs['board_height'] or 24
     model_file = kwargs['model'] or None
+    agent = Agent()
+    agent.verbose = kwargs['verbose']
+    #agent.verbose = True
     if kwargs['cmd'] == 'show':
         board = GameBoard(x=width, y=height, speed=speed)
         game = SnakeGameAI(board)
@@ -83,7 +86,7 @@ def train(**kwargs):
                 agent.model.record = record
                 agent.save()
 
-            print('Game', agent.n_games, 'Score', score, 'Record:', record)
+            agent.verbose and print('Game', agent.n_games, 'Score', score, 'Record:', record)
 
 if __name__ == '__main__':
     train()
