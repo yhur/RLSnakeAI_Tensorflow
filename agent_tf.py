@@ -81,8 +81,6 @@ class Agent:
             prediction = self.model(np.array([state]))
             move = np.argmax(prediction)
             final_move[move] = 1
-            return final_move
-
         return final_move
 
     def train_step(self, state, action, reward, next_state, alive):
