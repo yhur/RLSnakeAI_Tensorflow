@@ -1,14 +1,14 @@
 Snake Game Reinforcement Learning with Tensorflow
+```sh
 Usage: game_tf.py [OPTIONS] [CMD]
 
-                      Wecome to SnakegameAI
+  Ex)python game_tf.py -m model/model.weights.h5 -s 500 -w 32 -h 24 show
 
-  * Click on the close control of the App, or hit Escpe to end the App
-```
 Options:
-  -m, --model TEXT      Stored model File
-  -s, --speed INTEGER   pygame speed
-  -w, --width INTEGER   board width
-  -h, --height INTEGER  board height
-  --help                Show this message and exit.
+  -m, --model TEXT            Stored model File
+  -s, --speed INTEGER         pygame speed
+  -w, --width INTEGER         board width
+  -b, --board_height INTEGER  board height
+  -v, --verbose               Enable verbose mode.
+  -h, --help                  Show this message and exit.             Show this message and exit.
 ```
