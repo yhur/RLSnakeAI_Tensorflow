@@ -1,5 +1,5 @@
 from collections import deque
-from tensorflow.keras.models import Sequential
+from tensorflow.keras.models import Sequential, load_model
 from tensorflow.keras.layers import Dense, Input
 from tensorflow.keras.optimizers import Adam
 import tensorflow as tf
@@ -30,28 +30,41 @@ class Agent:
         self.verbose = False
         #self.model.compile(Adam(learning_rate=lr), loss='mse')
 
-    def save(self, file_name='model.weights.h5'):
-        model_folder_path = './model'
-        if not os.path.exists(model_folder_path):
-            os.makedirs(model_folder_path)
-        file_name = os.path.join(model_folder_path, file_name)
-        info_file = file_name.split('.h5')[0] + '.json'
-        info_json = {'record': self.model.record, 'n_games': self.model.n_games}
-        print(f'saving the model for {self.n_games} games with record {self.model.record}')
+    def save(self, dir_name='model'):
+        if not os.path.exists(dir_name):
+            os.makedirs(dir_name)
+        file_name = os.path.join(dir_name, 'model.keras')
+        self.model.save(file_name)
+        # Store record and n_games on the Agent class, not the model
+        info_file = file_name.replace('.keras', '.json')
+        info_json = {'record': getattr(self, 'record', 0), 'n_games': self.n_games}
+        print(f'saving the model for {self.n_games} games with record {getattr(self, "record", 0)}')
         with open(info_file, 'w') as f:
             f.write(json.dumps(info_json))
-        self.model.save_weights(file_name)
-
-    def load(self, file_name='./model/model.weights.h5'):
+    
+    def load(self, dir_name='model'):
         print('loading the stored model')
-        self.model.load_weights(file_name)
-        info_file = file_name.split('.h5')[0] + '.json'
-        with open(info_file, 'r') as f:
-            info_json = json.load(f)
-            if 'record' in info_json:
-                self.model.record = info_json['record']
-            if 'n_games' in info_json:
-                self.model.n_games = info_json['n_games']
+        file_name = os.path.join(dir_name, 'model.keras')
+        # Check if file exists before loading
+        if not os.path.exists(file_name):
+            print(f"Warning: Model file {file_name} not found")
+            return
+            
+        # Load weights with the correct format
+        self.model = load_model(file_name)
+        
+        # Load metadata
+        info_file = file_name.replace('.keras', '.json')
+        if os.path.exists(info_file):
+            with open(info_file, 'r') as f:
+                info_json = json.load(f)
+                # Set attributes on the Agent class, not the model
+                if 'record' in info_json:
+                    self.record = info_json['record']
+                if 'n_games' in info_json:
+                    self.n_games = info_json['n_games']
+        else:
+            print(f"Warning: Info file {info_file} not found")
 
     def remember(self, state, action, reward, next_state, alive):
         self.memory.append((state, action, reward, next_state, alive)) # popleft if MAX_MEMORY is reached

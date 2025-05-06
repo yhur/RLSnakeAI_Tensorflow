@@ -28,7 +28,7 @@ def train(**kwargs):
     speed = kwargs['speed'] or speed
     width = kwargs['width'] or 32
     height = kwargs['board_height'] or 24
-    model_file = kwargs['model'] or None
+    model_dir = kwargs['model'] or None
     agent = Agent()
     agent.verbose = kwargs['verbose']
     #agent.verbose = True
@@ -39,14 +39,17 @@ def train(**kwargs):
         board = Board(x=width, y=height)
         game = SnakeGameAI(board)
 
-    if model_file:
-        if os.path.exists(model_file):
-            agent.load(model_file)
+    if model_dir:
+        if os.path.exists(model_dir):
+            agent.load(model_dir)
             record = agent.model.record if hasattr(agent.model, 'record') else 0
             agent.n_games = agent.model.n_games if hasattr(agent.model, 'n_games') else 0
         else:
-            print(f"\n\n\tModel file {model_file} doesn't exist\n\n")
-            sys.exit()
+            print(f"\n\n\tModel '{model_dir}' doesn't exist\n\n")
+            if input("Is this a fresh start? y/n") != 'y':
+                sys.exit()
+    else:
+        model_dir = 'model'
 
     while True:
         # keyboard handling to capture the ending of the App
@@ -84,7 +87,7 @@ def train(**kwargs):
                 record = score
                 agent.model.n_games = agent.n_games
                 agent.model.record = record
-                agent.save()
+                agent.save(model_dir)
 
             agent.verbose and print('Game', agent.n_games, 'Score', score, 'Record:', record)
 
