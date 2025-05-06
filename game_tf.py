@@ -85,8 +85,7 @@ def train(**kwargs):
 
             if score > record:
                 record = score
-                agent.model.n_games = agent.n_games
-                agent.model.record = record
+                agent.record = record
                 agent.save(model_dir)
 
             agent.verbose and print('Game', agent.n_games, 'Score', score, 'Record:', record)

@@ -18,6 +18,7 @@ class Agent:
         self.lr = lr
         self.gamma = gamma # discount rate
         self.n_games = 0
+        self.record = 0
         self.epsilon = 0 # randomness
         self.memory = deque(maxlen=MAX_MEMORY) # popleft()
         self.model = Sequential([
