@@ -29,6 +29,7 @@ class Agent:
         self.optimizer = tf.keras.optimizers.Adam(learning_rate=lr)
         self.loss = tf.keras.losses.MeanSquaredError()
         self.verbose = False
+        # if you want to use the model.fit in the train_step, compile the model as following
         #self.model.compile(Adam(learning_rate=lr), loss='mse')
 
     def save(self, dir_name='model'):
@@ -98,25 +99,35 @@ class Agent:
         return final_move
 
     def train_step(self, state, action, reward, next_state, alive):
-        # 1: predicted Q values with current state
+        # 1: Model's prediction outputs Q-values for all possible actions.
+        #    Output layer uses LINEAR activation (not softmax like classification tasks)
+        #    target = [Q₀, Q₁, Q₂], one Q-value per action (unbounded real numbers)
+        #    During inference, the action with highest Q-value is taken
         target = np.array(self.model(np.array(state)))
-
+        
         self.verbose and print('Q Learning')
-        self.verbose and print('\tbefore : ', target)          # target Q with only Immediate Reward
+        self.verbose and print('\tbefore : ', target)          # Q-values before incorporating actual experience
+        
         for idx in range(len(alive)):
-            # 2: Q_new = r + y * max(next_predicted Q value) -> only do this if not done
-            # preds[argmax(action)] = Q_new
-            Q_new = reward[idx]
-            if alive[idx]:
-                Q_new = reward[idx] + self.gamma * np.amax(self.model(np.array([next_state[idx]])))
-
+            # 2: Calculate TD target using Bellman equation: Q_new = r + γ * max(Q(next_state))
+            #    Only include future reward if episode continues (alive[idx] == True)
+            delayed_reward = self.gamma * np.amax(self.model(np.array([next_state[idx]]))) if alive[idx] else 0
+            Q_new = reward[idx] + delayed_reward
+            
+            # 3: Replace only the Q-value of the action that was actually taken
+            #    Other Q-values remain as model's current predictions
             target[idx][np.argmax(action[idx]).item()] = Q_new
-        self.verbose and print('\tafter : ', target)          # target Q with the delayed Reward
-    
+        
+        self.verbose and print('\tafter : ', target)          # Q-values after incorporating observed reward
+        
+        # Calculate gradient: minimize difference between predicted Q and TD target
         with tf.GradientTape() as tape:
             pred = self.model(np.array(state))
             main_loss = tf.reduce_mean(self.loss(target, pred))
             loss = tf.add_n([main_loss] + self.model.losses)
         gradients = tape.gradient(loss, self.model.trainable_variables)
         self.optimizer.apply_gradients(zip(gradients, self.model.trainable_variables))
-        #self.model.fit(np.array(state), np.array(target), verbose=False)
+        # The above feedfward/backpropgation codes are 
+        #       equivalent to this commented code 
+        #       and can be replaced with
+        # self.model.fit(np.array(state), np.array(target), verbose=False)
