@@ -47,6 +47,34 @@ class SnakeGameAI(Snake):
         #return bodyAhead(self.head, direction)
         return Point(self.head.x + direction.value[0], self.head.y + direction.value[1]) in self.body[1:]
 
+    def isMoveSafe(self, direction, depth=3):
+        """Check if a move leads to a trap by simulating ahead"""
+        # Simulate the move
+        new_head = Point(self.head.x + direction.value[0], 
+                         self.head.y + direction.value[1])
+        
+        # Immediate collision
+        if (new_head.x >= self.x or new_head.x < 0 or 
+            new_head.y >= self.y or new_head.y < 0 or 
+            new_head in self.body[1:]):
+            return False
+        
+        if depth <= 1:
+            return True
+        
+        # Check if we have at least one safe move from new position
+        temp_head = self.head
+        self.head = new_head
+        
+        has_escape = False
+        for next_dir in list(Direction):
+            if self.isMoveSafe(next_dir, depth - 1):
+                has_escape = True
+                break
+        
+        self.head = temp_head
+        return has_escape
+
     def getState(self):
         forward = self.direction
         right = self.rightDirection()
@@ -69,6 +97,9 @@ class SnakeGameAI(Snake):
             self.board.apple.x < self.head.x,  # food left
             self.board.apple.x > self.head.x,  # food right
             self.board.apple.y < self.head.y,  # food up
-            self.board.apple.y > self.head.y   # food down
+            self.board.apple.y > self.head.y,   # food down
+            self.isMoveSafe(forward),
+            self.isMoveSafe(right),
+            self.isMoveSafe(left)
         ]
         return np.array(state, dtype=int)

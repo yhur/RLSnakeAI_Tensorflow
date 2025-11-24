@@ -41,6 +41,7 @@ def train(**kwargs):
     if model_dir:
         if os.path.exists(model_dir):
             agent.load(model_dir)
+            agent.freeze()  # take the snapshot for the transfer learning if any
             agent.model.compile(agent.optimizer, agent.loss)
             print(f"\tModel '{model_dir}' loaded(n_game:{agent.n_games}, record score:{agent.record})")
         else:
@@ -54,6 +55,7 @@ def train(**kwargs):
                 shutil.rmtree(model_dir)
             else:
                 agent.load(model_dir)
+                agent.freeze()  # take the snapshot for the transfer learning if any
                 agent.model.compile(agent.optimizer, agent.loss)
                 print(f"\tModel '{model_dir}' loaded(n_game:{agent.n_games}, record score:{agent.record})")
 
@@ -93,7 +95,7 @@ def train(**kwargs):
                 agent.record = score
                 agent.save(model_dir)
 
-            agent.verbose and print('Game', agent.n_games, 'Score', score, 'Record:', agent.record)
+            print('Game', agent.n_games, 'Score', score, 'Record:', agent.record)
 
 if __name__ == '__main__':
     train()

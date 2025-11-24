@@ -11,9 +11,10 @@ import json
 MAX_MEMORY = 100_000
 BATCH_SIZE = 100
 LR = 0.001
+N_TRANSFER = 100
 
 class Agent:
-    def __init__(self, input_size=14, output_size=3, lr=LR, gamma=0.9):
+    def __init__(self, input_size=17, output_size=3, lr=LR, gamma=0.9):
         self.input_size = input_size
         self.lr = lr
         self.gamma = gamma # discount rate
@@ -21,6 +22,7 @@ class Agent:
         self.record = 0
         self.epsilon = 0 # randomness
         self.memory = deque(maxlen=MAX_MEMORY) # popleft()
+        self.transfer_count = 0
         self.model = Sequential([
             Input(shape=(input_size, )),
             Dense(256, activation='relu'),
@@ -97,6 +99,15 @@ class Agent:
             final_move[move] = 1
         return final_move
 
+    def freeze(self):
+        self.frozen = self.model.get_weights()       # get the original weights to freeze
+
+    def apply_frozen(self, cut=-1):
+        w_new = self.model.get_weights()[0][cut]    # the 1st hidden layer's weights for the last input neurons 
+        self.frozen[0] = np.delete(self.frozen[0], cut, axis=0)   # the last n lines of the weight 1 (cut)
+        self.frozen[0] = np.vstack([self.frozen[0], w_new])
+        self.model.set_weights(self.frozen)
+
     def train_step(self, state, action, reward, next_state, alive):
         # 1: Model's prediction outputs Q-values for all possible actions.
         #    Output layer uses LINEAR activation (not softmax like classification tasks)
@@ -121,3 +132,6 @@ class Agent:
         
         # Calculate gradient: minimize difference between predicted Q and TD target
         self.model.fit(np.array(state), np.array(target), verbose=False)
+        if self.transfer_count < N_TRANSFER:
+            self.transfer_count += 1
+            self.apply_frozen()
