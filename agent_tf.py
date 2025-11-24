@@ -29,8 +29,7 @@ class Agent:
         self.optimizer = tf.keras.optimizers.Adam(learning_rate=lr)
         self.loss = tf.keras.losses.MeanSquaredError()
         self.verbose = False
-        # if you want to use the model.fit in the train_step, compile the model as following
-        #self.model.compile(Adam(learning_rate=lr), loss='mse')
+        self.model.compile(self.optimizer, self.loss)
 
     def save(self, dir_name='model'):
         if not os.path.exists(dir_name):
@@ -121,13 +120,4 @@ class Agent:
         self.verbose and print('\tafter : ', target)          # Q-values after incorporating observed reward
         
         # Calculate gradient: minimize difference between predicted Q and TD target
-        with tf.GradientTape() as tape:
-            pred = self.model(np.array(state))
-            main_loss = tf.reduce_mean(self.loss(target, pred))
-            loss = tf.add_n([main_loss] + self.model.losses)
-        gradients = tape.gradient(loss, self.model.trainable_variables)
-        self.optimizer.apply_gradients(zip(gradients, self.model.trainable_variables))
-        # The above feedfward/backpropgation codes are 
-        #       equivalent to this commented code 
-        #       and can be replaced with
-        # self.model.fit(np.array(state), np.array(target), verbose=False)
+        self.model.fit(np.array(state), np.array(target), verbose=False)

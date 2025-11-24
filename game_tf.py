@@ -41,6 +41,7 @@ def train(**kwargs):
     if model_dir:
         if os.path.exists(model_dir):
             agent.load(model_dir)
+            agent.model.compile(agent.optimizer, agent.loss)
             print(f"\tModel '{model_dir}' loaded(n_game:{agent.n_games}, record score:{agent.record})")
         else:
             print(f"\n\n\tModel '{model_dir}' doesn't exist\n\n")
@@ -53,6 +54,7 @@ def train(**kwargs):
                 shutil.rmtree(model_dir)
             else:
                 agent.load(model_dir)
+                agent.model.compile(agent.optimizer, agent.loss)
                 print(f"\tModel '{model_dir}' loaded(n_game:{agent.n_games}, record score:{agent.record})")
 
     while True:
