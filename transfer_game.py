@@ -2,7 +2,7 @@ import pygame
 import sys
 from snakeai import SnakeGameAI
 from SnakeGame.boards import GameBoard, Board
-from agent_tf import Agent
+from transfer_agent import TransferAgent, add_weights
 import click
 import signal
 import os, shutil
@@ -13,10 +13,12 @@ def handler(signum, frame):
 signal.signal(signal.SIGINT, handler)
 
 @click.command(context_settings=dict(help_option_names=["-h", "--help"]), help="\nEx)python game_tf.py -m model/model.weights.h5 -s 500 -w 32 -h 24 show\n")
+@click.option("--org", "-o", type=str, help="Original model File")
 @click.option("--model", "-m", type=str, help="Stored model File")
 @click.option("--speed", "-s", type=int, help="pygame speed")
 @click.option('--width', '-w', type=int, help='board width')
 @click.option('--board_height', '-b', type=int, help='board height')
+@click.option('--transfer_num', '-t', type=int, help='number of transfer learning')
 @click.option('--verbose', '-v', is_flag=True, help="Enable verbose mode.")
 @click.argument("cmd", default='hide', nargs=1)
 def train(**kwargs):
@@ -27,8 +29,10 @@ def train(**kwargs):
     speed = kwargs['speed'] or speed
     width = kwargs['width'] or 32
     height = kwargs['board_height'] or 24
+    transfer_num = kwargs['transfer_num'] or 100
     model_dir = kwargs['model'] or None
-    agent = Agent()
+    org_model = kwargs['org'] or 'org'
+    agent = TransferAgent()
     agent.verbose = kwargs['verbose']
     if kwargs['cmd'] == 'show':
         board = GameBoard(x=width, y=height, speed=speed)
@@ -36,6 +40,12 @@ def train(**kwargs):
     else:
         board = Board(x=width, y=height)
         game = SnakeGameAI(board)
+
+    if os.path.exists(org_model):
+        add_weights(org_model, agent)
+    else:
+        print(f"\n\n\tOriginal Model '{org_model}' doesn't exist\n\n")
+        sys.exit()
 
     if model_dir:
         if os.path.exists(model_dir):
@@ -56,7 +66,10 @@ def train(**kwargs):
                 agent.model.compile(agent.optimizer, agent.loss)
                 print(f"\tModel '{model_dir}' loaded(n_game:{agent.n_games}, record score:{agent.record})")
 
-    while True:
+    agent.freeze()  # take the snapshot for the transfer learning if any
+
+    transfer_count = 0
+    while transfer_count < transfer_num:
         # keyboard handling to capture the ending of the App
         if pygame.display.get_init():
             for event in pygame.event.get():
@@ -83,6 +96,7 @@ def train(**kwargs):
         agent.remember(state0, action, reward, state1, alive)
 
         if alive == False:
+            transfer_count += 1
             # train long memory, plot result
             game.reset()
             agent.n_games += 1
@@ -93,6 +107,9 @@ def train(**kwargs):
                 agent.save(model_dir)
 
             print(f'{datetime.now().strftime("%m/%d %H:%M:%S")} >> Score : {score:>3} @ {agent.n_games:>4} games, High : {agent.record}')
+    else:
+        print("Transfer Learning Finished.")
+        agent.save(model_dir)
 
 if __name__ == '__main__':
     train()

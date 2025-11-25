@@ -13,7 +13,7 @@ BATCH_SIZE = 1000
 LR = 0.001
 
 class Agent:
-    def __init__(self, input_size=14, output_size=3, lr=LR, gamma=0.9):
+    def __init__(self, input_size=17, output_size=3, lr=LR, gamma=0.9):
         self.input_size = input_size
         self.lr = lr
         self.gamma = gamma # discount rate
