@@ -56,7 +56,7 @@ How to excercise
 1. clone the repository
 2. checkout to model.fit
 3. train it
-4. checkout to TransferLearning
+4. checkout to `transfer_learning`
 5. rename model to org
 6. run `python transfer_game.py`
 7. once finished, you can run `python game_tf.py show`
