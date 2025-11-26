@@ -25,37 +25,27 @@ class SnakeGameAI(Snake):
         idx = self.directionRing.index(direction)
         return self.directionRing[(idx - 1) % 4]
 
-    def getDistanceToWall(self, direction):
-        """Returns normalized distance to wall in given direction"""
-        current = Point(self.head.x, self.head.y)
-        distance = 0
-        max_distance = max(self.x, self.y)
-        
-        while True:
-            current = Point(current.x + direction.value[0], current.y + direction.value[1])
-            distance += 1
-            
-            # Hit wall
-            if current.x >= self.x or current.x < 0 or current.y >= self.y or current.y < 0:
-                return distance / max_distance
+    def isWallAhead(self, direction):
+        x = self.head.x + direction.value[0]
+        y = self.head.y + direction.value[1]
+        if x >= self.x or x < 0 or y >= self.y or y <0:
+            return True
+        else:
+            return False
 
-    def getDistanceToBody(self, direction):
-        """Returns normalized distance to body in given direction (1.0 if no body found)"""
-        current = Point(self.head.x, self.head.y)
-        distance = 0
-        max_distance = max(self.x, self.y)
-        
-        while True:
-            current = Point(current.x + direction.value[0], current.y + direction.value[1])
-            distance += 1
-            
-            # Hit wall
-            if current.x >= self.x or current.x < 0 or current.y >= self.y or current.y < 0:
-                return 1.0
-            
-            # Hit body
-            if current in self.body[1:]:
-                return distance / max_distance
+    def bodyCheck(self, direction):
+        def bodyAhead(current, direction):
+            newPoint = Point(current.x + direction.value[0], current.y + direction.value[1])
+            #print(current, newPoint, direction)
+            if newPoint.x >= self.x or newPoint.x < 0 or newPoint.y >= self.y or newPoint.y < 0:
+                return False
+            else:
+                if newPoint in self.body[1:]:
+                    return True
+                else:
+                    return bodyAhead(newPoint, direction)
+        #return bodyAhead(self.head, direction)
+        return Point(self.head.x + direction.value[0], self.head.y + direction.value[1]) in self.body[1:]
 
     def isMoveSafe(self, direction, depth=3):
         """Check if a move leads to a trap by simulating ahead"""
@@ -89,18 +79,20 @@ class SnakeGameAI(Snake):
         forward = self.direction
         right = self.rightDirection()
         left  = self.leftDirection()
-        
+
         state = [
-            # Wall distances (normalized)
-            self.getDistanceToWall(forward),
-            self.getDistanceToWall(right),
-            self.getDistanceToWall(left),
+            # Danger straight - Wall
+            self.isWallAhead(forward),
+            # Danger right - Wall
+            self.isWallAhead(right),
+            # Danger left - Wall
+            self.isWallAhead(left),
             # current moving direction as one hot encoding [R, D, L, U]
             *[self.direction == d for d in list(Direction)],
-            # Body distances (normalized, 1.0 if no body in that direction)
-            self.getDistanceToBody(forward),
-            self.getDistanceToBody(right),
-            self.getDistanceToBody(left),
+            # Danger straight - body
+            self.bodyCheck(forward),
+            self.bodyCheck(right),
+            self.bodyCheck(left),
             # Food location 
             self.board.apple.x < self.head.x,  # food left
             self.board.apple.x > self.head.x,  # food right
@@ -110,4 +102,4 @@ class SnakeGameAI(Snake):
             self.isMoveSafe(right),
             self.isMoveSafe(left)
         ]
-        return np.array(state, dtype=float)
+        return np.array(state, dtype=int)

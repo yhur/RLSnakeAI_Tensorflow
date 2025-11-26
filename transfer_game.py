@@ -1,8 +1,10 @@
 import pygame
 import sys
 from snakeai import SnakeGameAI
+from snakeai_bool import SnakeGameAI as Trainer
 from SnakeGame.boards import GameBoard, Board
-from transfer_agent import TransferAgent, add_weights
+from agent_tf import Agent
+from trainer_agent import TrainerAgent
 import click
 import signal
 import os, shutil
@@ -30,43 +32,36 @@ def train(**kwargs):
     width = kwargs['width'] or 32
     height = kwargs['board_height'] or 24
     transfer_num = kwargs['transfer_num'] or 100
-    model_dir = kwargs['model'] or None
+    model_dir = kwargs['model'] or 'model'
     org_model = kwargs['org'] or 'org'
-    agent = TransferAgent()
-    agent.verbose = kwargs['verbose']
+    agent = Agent()
+    trainer = TrainerAgent()
+    trainer.verbose = kwargs['verbose']
     if kwargs['cmd'] == 'show':
         board = GameBoard(x=width, y=height, speed=speed)
-        game = SnakeGameAI(board)
     else:
         board = Board(x=width, y=height)
-        game = SnakeGameAI(board)
+    game = SnakeGameAI(board)
+    trainer_game = Trainer(board)
 
     if os.path.exists(org_model):
-        add_weights(org_model, agent)
+        trainer.load(org_model)
+        trainer.model.compile(trainer.optimizer, trainer.loss)
+        print(f"\tModel '{org_model}' loaded(n_game:{trainer.n_games}, record score:{trainer.record})")
     else:
         print(f"\n\n\tOriginal Model '{org_model}' doesn't exist\n\n")
         sys.exit()
 
-    if model_dir:
-        if os.path.exists(model_dir):
-            agent.load(model_dir)
-            agent.model.compile(agent.optimizer, agent.loss)
-            print(f"\tModel '{model_dir}' loaded(n_game:{agent.n_games}, record score:{agent.record})")
-        else:
-            print(f"\n\n\tModel '{model_dir}' doesn't exist\n\n")
-            if input("Is this a fresh start? y/n") != 'y':
-                sys.exit()
+    if os.path.exists(model_dir):
+        agent.load(model_dir)
+        agent.model.compile(agent.optimizer, agent.loss)
+        print(f"\tModel '{model_dir}' loaded(n_game:{agent.n_games}, record score:{agent.record})")
     else:
-        model_dir = 'model'
-        if os.path.exists(model_dir):
-            if input(f"\tModel '{model_dir}' exists. Do you want to delete and restart? y/n") == 'y':
-                shutil.rmtree(model_dir)
-            else:
-                agent.load(model_dir)
-                agent.model.compile(agent.optimizer, agent.loss)
-                print(f"\tModel '{model_dir}' loaded(n_game:{agent.n_games}, record score:{agent.record})")
-
-    agent.freeze()  # take the snapshot for the transfer learning if any
+        print(f"\n\n\tModel '{model_dir}' doesn't exist\n\n")
+        if input("Is this a fresh start? y/n") != 'y':
+            sys.exit()
+    
+    trainer.trainee = agent.model
 
     transfer_count = 0
     while transfer_count < transfer_num:
@@ -80,36 +75,38 @@ def train(**kwargs):
                         sys.exit()
 
         # get current state
-        state0 = game.getState()
+        trainee_state = game.getState()
+        state0 = trainer_game.getState()
 
         # get action
-        action = agent.getAction(state0)
+        action = trainer.getAction(state0)
 
         # perform move and get new state
-        alive, score, reward = game.moveTo(action)
-        state1 = game.getState()
+        alive, score, reward = trainer_game.moveTo(action)
+        state1 = trainer_game.getState()
 
         # train short memory
-        agent.trainShortMemory(state0, action, reward, state1, alive)
+        trainer.trainShortMemory(state0, action, reward, state1, alive, trainee_state)
 
         # remember
-        agent.remember(state0, action, reward, state1, alive)
+        trainer.remember(state0, action, reward, state1, alive, trainee_state)
 
         if alive == False:
             transfer_count += 1
             # train long memory, plot result
+            trainer_game.reset()
             game.reset()
-            agent.n_games += 1
-            agent.trainLongMemory()
+            trainer.n_games += 1
+            trainer.trainLongMemory()
 
-            if score > agent.record:
-                agent.record = score
-                agent.save(model_dir)
+            if score > trainer.record:
+                trainer.record = score
+                trainer.save(model_dir)
 
-            print(f'{datetime.now().strftime("%m/%d %H:%M:%S")} >> Score : {score:>3} @ {agent.n_games:>4} games, High : {agent.record}')
+            print(f'{datetime.now().strftime("%m/%d %H:%M:%S")} >> Score : {score:>3} @ {trainer.n_games:>4} games, High : {trainer.record}')
     else:
         print("Transfer Learning Finished.")
-        agent.save(model_dir)
+        trainer.save(model_dir)
 
 if __name__ == '__main__':
     train()
