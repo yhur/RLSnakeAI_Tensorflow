@@ -20,7 +20,7 @@ signal.signal(signal.SIGINT, handler)
 @click.option("--speed", "-s", type=int, help="pygame speed")
 @click.option('--width', '-w', type=int, help='board width')
 @click.option('--board_height', '-b', type=int, help='board height')
-@click.option('--transfer_num', '-t', type=int, help='number of transfer learning')
+@click.option('--train_num', '-t', type=int, help='number of training')
 @click.option('--verbose', '-v', is_flag=True, help="Enable verbose mode.")
 @click.argument("cmd", default='hide', nargs=1)
 def train(**kwargs):
@@ -31,7 +31,7 @@ def train(**kwargs):
     speed = kwargs['speed'] or speed
     width = kwargs['width'] or 32
     height = kwargs['board_height'] or 24
-    transfer_num = kwargs['transfer_num'] or 100
+    train_num = kwargs['train_num'] or 100
     model_dir = kwargs['model'] or 'model'
     org_model = kwargs['org'] or 'org'
     agent = Agent()
@@ -64,7 +64,7 @@ def train(**kwargs):
     trainer.trainee = agent.model
 
     transfer_count = 0
-    while transfer_count < transfer_num:
+    while transfer_count < train_num:
         # keyboard handling to capture the ending of the App
         if pygame.display.get_init():
             for event in pygame.event.get():

@@ -17,6 +17,7 @@ signal.signal(signal.SIGINT, handler)
 @click.option("--speed", "-s", type=int, help="pygame speed")
 @click.option('--width', '-w', type=int, help='board width')
 @click.option('--board_height', '-b', type=int, help='board height')
+@click.option('--train_num', '-t', type=int, help='number of training')
 @click.option('--verbose', '-v', is_flag=True, help="Enable verbose mode.")
 @click.argument("cmd", default='hide', nargs=1)
 def train(**kwargs):
@@ -27,7 +28,8 @@ def train(**kwargs):
     speed = kwargs['speed'] or speed
     width = kwargs['width'] or 32
     height = kwargs['board_height'] or 24
-    model_dir = kwargs['model'] or None
+    model_dir = kwargs['model'] or 'model'
+    train_num = kwargs['train_num'] or 10000
     agent = Agent()
     agent.verbose = kwargs['verbose']
     if kwargs['cmd'] == 'show':
@@ -37,26 +39,17 @@ def train(**kwargs):
         board = Board(x=width, y=height)
         game = SnakeGameAI(board)
 
-    if model_dir:
-        if os.path.exists(model_dir):
-            agent.load(model_dir)
-            agent.model.compile(agent.optimizer, agent.loss)
-            print(f"\tModel '{model_dir}' loaded(n_game:{agent.n_games}, record score:{agent.record})")
-        else:
-            print(f"\n\n\tModel '{model_dir}' doesn't exist\n\n")
-            if input("Is this a fresh start? y/n") != 'y':
-                sys.exit()
+    if os.path.exists(model_dir):
+        agent.load(model_dir)
+        agent.model.compile(agent.optimizer, agent.loss)
+        print(f"\tModel '{model_dir}' loaded(n_game:{agent.n_games}, record score:{agent.record})")
     else:
-        model_dir = 'model'
-        if os.path.exists(model_dir):
-            if input(f"\tModel '{model_dir}' exists. Do you want to delete and restart? y/n") == 'y':
-                shutil.rmtree(model_dir)
-            else:
-                agent.load(model_dir)
-                agent.model.compile(agent.optimizer, agent.loss)
-                print(f"\tModel '{model_dir}' loaded(n_game:{agent.n_games}, record score:{agent.record})")
+        print(f"\n\n\tModel '{model_dir}' doesn't exist\n\n")
+        if input("Is this a fresh start? y/n") != 'y':
+            sys.exit()
 
-    while True:
+    transfer_count = 0
+    while transfer_count < train_num:
         # keyboard handling to capture the ending of the App
         if pygame.display.get_init():
             for event in pygame.event.get():
@@ -83,6 +76,7 @@ def train(**kwargs):
         agent.remember(state0, action, reward, state1, alive)
 
         if alive == False:
+            transfer_count += 1
             # train long memory, plot result
             game.reset()
             agent.n_games += 1
